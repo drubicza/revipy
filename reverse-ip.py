@@ -1,68 +1,59 @@
-#/usr/bin/python
-
+#!/usr/bin/python
 import requests
 from ast import literal_eval as d
 from sys import exit
 
-user_agent = { "User-Agent" : "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:59.0) Gecko/20100101 Firefox/59.0" }
-url = "https://domains.yougetsignal.com/domains.php"
-junk = "=" *70
+user_agent = {"User-Agent" : "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:59.0) Gecko/20100101 Firefox/59.0"}
+url        = "https://domains.yougetsignal.com/domains.php"
+junk       = "=" * 70
+err_key    = "\n\n[-] Error, Domain/IP Address is incorrect! or can reversed or check your connections\n" \
+             "[-] Try using www. or remove http:// or try other domain format\n" \
+             "[-] If you check many time in one day, you will get limit"
+stat_ok    = [["[+] IP               :", "remoteIpAddress"],
+              ["[+] Status           :", "status"],
+              ["[+] Date and Time    :", "lastScrape"],
+              ["[+] Results Method   :", "resultsMethod"],
+              ["[+] Domain Count     :", "domainCount"]]
+stat_no    = [["[-] Status           :", "status"],
+              ["[-] Message          :", "message"]]
 
-print """%s
-[+] Author	: Bayu Fedra	
-[+] Facebook	: Bayu Fedra
-[+] Instagram	: bayufedraa
-[+] Github	: https://github.com/B3yeZ/
-%s""" %(junk, junk)
+oops       = lambda msg: "\n".join("{} {}".format(stat_no[i][0], res[stat_no[i][1]]) for i in range(len(stat_no))) + "\n" + msg
 
+print """{}
+[+] Author    : Bayu Fedra
+[+] Facebook  : Bayu Fedra
+[+] Instagram : bayufedraa
+[+] Github    : https://github.com/B3yeZ/\n{}""".format(junk, junk)
 
 try:
-	target = raw_input("[+] Target	: ")
-	try:
-		try:
-			form = { "remoteAddress" : "{0}".format(target), "key" : "" }
-			req = requests.post(url, headers=user_agent, data=form, timeout=15)
-			res = d(req.text)
-		except:
-			print "[-] Please Check  your internet connections..."
-			exit(0)
-	
-		if res["status"] == "Success":
-			print ""
-			print "[+] Target		:", res["remoteAddress"]
-			print "[+] IP			:", res["remoteIpAddress"]
-			print "[+] Status		:", res["status"]
-			print "[+] Date and Time	:", res["lastScrape"]
-			print "[+] Results Method	:", res["resultsMethod"]
-			print "[+] Domain Count	:", res["domainCount"]
-			print ""
-			
-			for i in range(len(res["domainArray"])):
-				print "[+] Domain Reversed %d	: %s" %(i+1, res["domainArray"][i][0])
-		
-		elif res["status"] == "Fail":
-			if "Invalid remote address" in res["message"]:
-				print "[+] Status		:", res["status"]
-				print "[+] Message		:", res["message"]
-				print ""
-				print "[+] Try using www. or remove http:// or try other domain format"
-			
-			elif "check limit reached for" in res["message"]:
-				print "[+] Status		:", res["status"]
-				print "[+] Message		:", res["message"]
-				print ""
-				print "[+] Try to change your IP Address"
-			else:
-				print "[+] Status		:", res["status"]
-				print "[+] Message		:", res["message"]
-			
-		else:
-			print "[+] Status		:", res["status"]
+    target = raw_input("[?] Target           : ")
+    try:
+        try:
+            form = {"remoteAddress" : "{}".format(target), "key" : ""}
+            res = d(requests.post(url, headers=user_agent, data=form, timeout=15).text)
+        except:
+            print "[-] Please check your internet connections..."
+            exit(0)
 
-	except KeyError:
-		print "\n\n[-] Error, Domain/IP Address is incorrect! or can reversed or check your connections"
-		print "[-] Try using www. or remove http:// or try other domain format"
-		print "[-] If you check many time in one day, you will get limit"
-		
+        if res["status"] == "Success":
+            print "\n".join("{} {}".format(stat_ok[i][0], res[stat_ok[i][1]]) for i in range(len(stat_ok)))
+            print "\n".join("[+] Domain Reversed {}: {}".format(i + 1, res["domainArray"][i][0]) for i in range(len(res["domainArray"])))
+
+        elif res["status"] == "Fail":
+            if "Invalid remote address" in res["message"]:
+                print oops("[i] Try using www. or remove http:// or try other domain format")
+
+            elif "check limit reached for" in res["message"]:
+                print oops("[i] Try to change your IP Address")
+
+            else:
+                print oops("")
+
+        else:
+            print "[+] Status           : {}".format(res["status"])
+
+    except KeyError:
+        print err_key
+
 except KeyboardInterrupt:
-	print "\n[+] Closing the program..."
+    print "\n[i] Closing the program..."
